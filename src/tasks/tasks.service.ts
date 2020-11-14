@@ -16,12 +16,14 @@ export class TasksService {
     private taskRespository: TaskRespository,
   ) {}
 
-  getTasks(filterDtO: GetTasksFilterDto): Promise<Task[]> {
-    return this.taskRespository.getTasks(filterDtO);
+  getTasks(filterDto: GetTasksFilterDto, user: User): Promise<Task[]> {
+    return this.taskRespository.getTasks(filterDto, user);
   }
 
-  async getTaskById(id: number): Promise<Task> {
-    const found = await this.taskRespository.findOne(id);
+  async getTaskById(id: number, user: User): Promise<Task> {
+    const found = await this.taskRespository.findOne({
+      where: { id, userId: user.id },
+    });
 
     if (!found) {
       throw new NotFoundException(`Task with "${id}" not found.`);
@@ -34,16 +36,16 @@ export class TasksService {
     return this.taskRespository.createTask(createTaskDto, user);
   }
 
-  async deleteTask(id: number): Promise<void> {
-    const deleted = await this.taskRespository.delete(id);
+  async deleteTask(id: number, user: User): Promise<void> {
+    const deleted = await this.taskRespository.delete({ id, userId: user.id });
 
     if (deleted.affected === 0) {
       throw new NotFoundException(`Task with "${id}" not found.`);
     }
   }
 
-  async updateTaskStatus(id: number, status: TaskStatus) {
-    const task = await this.getTaskById(id);
+  async updateTaskStatus(id: number, status: TaskStatus, user: User) {
+    const task = await this.getTaskById(id, user);
     task.status = status;
     await task.save();
     return task;
